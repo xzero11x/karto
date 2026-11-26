@@ -12,7 +12,7 @@ Cada ciudad es una carpeta de datos. La primera es **Bagua** (Amazonas, Perú).
 Se instala directo desde GitHub, con una versión fija:
 
 ```sh
-npm install maplibre-gl@^6.14 github:USUARIO/karto#v1.0.0
+npm install maplibre-gl@^6.14 github:xzero11x/karto#v1.0.0
 ```
 
 En `vite.config.ts`, el plugin publica los datos y el worker de MapLibre en `/karto/`, tanto en
@@ -40,7 +40,7 @@ import 'karto/estilos.css';
 El mapa ocupa todo su contenedor. Sin Vite, copia los datos a la carpeta pública con
 `npx karto-datos public/karto` y sírvelos en `/karto/` (el servidor debe admitir rangos HTTP).
 
-Para actualizar a otra versión: `npm install github:USUARIO/karto#v1.1.0`.
+Para actualizar a otra versión: `npm install github:xzero11x/karto#v1.1.0`.
 
 ### Props de `<Karto />`
 

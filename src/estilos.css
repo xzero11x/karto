@@ -1,0 +1,449 @@
+/* karto: estilos del mapa. Todo queda dentro de .karto (y del menú de temas, que se abre en un
+   portal): no toca html, body ni las variables de la app que lo usa. Para cambiar colores, redefine
+   las variables --karto-* sobre .karto. */
+.karto,
+.karto-style-menu {
+  --karto-background: #ffffff;
+  --karto-surface-elevated: rgb(255 255 255 / 92%);
+  --karto-foreground: #171717;
+  --karto-popover: #ffffff;
+  --karto-popover-foreground: #171717;
+  --karto-primary: #171717;
+  --karto-primary-foreground: #ffffff;
+  --karto-muted: #f5f5f5;
+  --karto-muted-foreground: #666666;
+  --karto-border: #ebebeb;
+  --karto-border-subtle: #f2f2f2;
+  --karto-input: #ebebeb;
+  --karto-ring: #0070f3;
+  --karto-shadow-xs: 0 1px 1px rgb(0 0 0 / 2%), 0 2px 2px rgb(0 0 0 / 4%);
+  --karto-shadow-control: 0 0 0 1px rgb(0 0 0 / 8%), 0 1px 1px rgb(0 0 0 / 2%);
+  --karto-shadow-panel: 0 0 0 1px rgb(0 0 0 / 8%), 0 16px 32px -8px rgb(0 0 0 / 16%);
+  color: var(--karto-foreground);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+.karto *,
+.karto-style-menu * {
+  box-sizing: border-box;
+}
+.karto button,
+.karto-style-menu button {
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.karto {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #f6f1e7;
+}
+.karto-map {
+  position: absolute;
+  inset: 0;
+}
+.karto-map .maplibregl-ctrl-attrib {
+  font-size: 10px;
+  background: rgb(255 255 255 / 88%);
+  backdrop-filter: blur(4px);
+  border-radius: 6px;
+}
+
+.karto-controls {
+  position: absolute;
+  z-index: 10;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 3px;
+  border: 1px solid var(--karto-border);
+  border-radius: 10px;
+  background: var(--karto-surface-elevated);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--karto-shadow-control);
+}
+.karto-controls button {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  color: var(--karto-foreground);
+  transition:
+    background-color 0.12s,
+    color 0.12s;
+}
+.karto-controls button:hover:not(:disabled):not([aria-pressed='true']) {
+  background: var(--karto-muted);
+}
+.karto-controls button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+.karto-controls button[aria-pressed='true'] {
+  background: var(--karto-primary);
+  color: var(--karto-primary-foreground);
+  box-shadow: var(--karto-shadow-xs);
+}
+.karto-controls-3d {
+  height: 42px !important;
+  flex-direction: column;
+  gap: 2px;
+}
+.karto-controls-3d span {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.karto-controls-sep {
+  height: 1px;
+  margin: 2px 4px;
+  background: var(--karto-border);
+}
+
+.karto-badge {
+  position: absolute;
+  z-index: 5;
+  bottom: 12px;
+  left: 12px;
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--karto-border);
+  border-radius: 6px;
+  background: var(--karto-surface-elevated);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--karto-shadow-xs);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--karto-muted-foreground);
+}
+.karto-failure {
+  position: absolute;
+  z-index: 20;
+  top: 50%;
+  left: 50%;
+  max-width: 320px;
+  padding: 14px 16px;
+  border: 1px solid var(--karto-border);
+  border-radius: 10px;
+  background: var(--karto-background);
+  box-shadow: var(--karto-shadow-panel);
+  font-size: 12.5px;
+  line-height: 1.5;
+  transform: translate(-50%, -50%);
+}
+
+.karto-height-notice {
+  position: absolute;
+  z-index: 6;
+  bottom: 44px;
+  left: 12px;
+  max-width: min(348px, calc(100% - 76px));
+  padding: 8px 12px;
+  border: 1px solid var(--karto-border);
+  border-radius: 8px;
+  background: var(--karto-surface-elevated);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--karto-shadow-control);
+  color: var(--karto-foreground);
+  font-size: 11px;
+  line-height: 1.5;
+  pointer-events: auto;
+}
+.karto-height-notice button {
+  text-decoration: underline;
+}
+@media (min-width: 768px) {
+  .karto:has(.karto-info) .karto-height-notice {
+    left: 372px;
+  }
+}
+@media (max-width: 767px) {
+  .karto-height-notice {
+    bottom: 72px;
+    font-size: 10px;
+  }
+  .karto:has(.karto-info) .karto-height-notice {
+    display: none;
+  }
+}
+
+.karto-height-simulated,
+.karto-height-observed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.karto-height-simulated {
+  color: var(--karto-muted-foreground);
+}
+.karto-height-observed::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  background: #8e9fa8;
+  border-radius: 2px;
+}
+.karto-height-simulated input {
+  accent-color: var(--karto-primary);
+}
+
+/* Apariencia secundaria: un único disparador, opciones bajo demanda. */
+
+.karto-style-trigger {
+  position: absolute;
+  z-index: 16;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid var(--karto-border);
+  border-radius: 8px;
+  background: var(--karto-surface-elevated);
+  backdrop-filter: blur(8px);
+  color: var(--karto-foreground);
+  box-shadow: var(--karto-shadow-control);
+  font-size: 12px;
+  font-weight: 500;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s;
+}
+.karto-style-trigger:hover,
+.karto-style-trigger[data-state='open'] {
+  background: var(--karto-background);
+  border-color: var(--karto-input);
+}
+.karto-style-trigger:focus-visible,
+.karto-controls button:focus-visible,
+.karto-height-notice summary:focus-visible {
+  outline: 2px solid var(--karto-ring);
+  outline-offset: 2px;
+}
+.karto-style-menu {
+  z-index: 50;
+  width: 220px;
+  max-height: var(--radix-dropdown-menu-content-available-height);
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid var(--karto-border);
+  border-radius: 10px;
+  background: var(--karto-popover);
+  color: var(--karto-popover-foreground);
+  box-shadow: var(--karto-shadow-panel);
+}
+.karto-style-sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--karto-border);
+}
+.karto-style-label {
+  padding: 6px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--karto-muted-foreground);
+}
+.karto-style-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  cursor: pointer;
+  outline: none;
+}
+.karto-style-option[data-highlighted] {
+  background: var(--karto-muted);
+}
+.karto-style-option[data-state='checked'] {
+  font-weight: 600;
+}
+.karto-style-check {
+  margin-left: auto;
+  color: var(--karto-primary);
+}
+.karto-style-swatch {
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgb(0 0 0 / 12%);
+  border-radius: 5px;
+  background: linear-gradient(
+    135deg,
+    #d8d4cb 30%,
+    #eaece8 31%,
+    #eaece8 44%,
+    #fdd48a 45%,
+    #fdd48a 55%,
+    #cfe6c4 56%
+  );
+}
+.karto-swatch-bright {
+  background: linear-gradient(135deg, #f8f3e6 45%, #fff 46%, #a9d3df 60%);
+}
+.karto-swatch-liberty {
+  background: linear-gradient(
+    135deg,
+    #dacdb6 30%,
+    #f2eee3 31%,
+    #f2eee3 44%,
+    #f7a24a 45%,
+    #f7a24a 55%,
+    #98cff0 56%
+  );
+}
+.karto-swatch-dark {
+  background: linear-gradient(
+    135deg,
+    #2c3a4d 30%,
+    #0f151c 31%,
+    #0f151c 44%,
+    #f2b35d 45%,
+    #f2b35d 55%,
+    #16382d 56%
+  );
+}
+.karto-swatch-fjord {
+  background: linear-gradient(135deg, #d4dfe1 45%, #fff 46%, #8fb8cc 60%);
+}
+.karto-style-note {
+  margin: 4px 4px 0;
+  padding: 6px 4px 2px;
+  border-top: 1px solid var(--karto-border-subtle);
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--karto-muted-foreground);
+}
+.karto-height-notice summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.karto-height-notice[open] summary {
+  margin-bottom: 6px;
+}
+
+@media (max-width: 767px) {
+  .karto-controls {
+    right: 10px;
+  }
+  .karto-style-trigger {
+    top: 10px;
+    left: 10px;
+    min-height: 38px;
+  }
+  .karto:has(.karto-info) .karto-badge {
+    display: none;
+  }
+}
+.karto-swatch-mono {
+  background: linear-gradient(
+    135deg,
+    #b2b2b2 30%,
+    #f5f5f5 31%,
+    #f5f5f5 44%,
+    #8c8c8c 45%,
+    #8c8c8c 55%,
+    #dcdcdc 56%
+  );
+}
+
+/* Ficha del elemento */
+.karto-info {
+  position: absolute;
+  z-index: 15;
+  top: 56px;
+  left: 12px;
+  width: 340px;
+  max-height: calc(100% - 96px);
+  overflow-y: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--karto-border);
+  border-radius: 12px;
+  background: var(--karto-background);
+  box-shadow: var(--karto-shadow-panel);
+  font-size: 13px;
+}
+.karto-info header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.karto-info header button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--karto-muted-foreground);
+}
+.karto-info header button:hover {
+  background: var(--karto-muted);
+}
+.karto-info h2 {
+  margin: 2px 0 0;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+.karto-info-eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--karto-muted-foreground);
+}
+.karto-info dl {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+.karto-info dl > div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+}
+.karto-info dt {
+  color: var(--karto-muted-foreground);
+}
+.karto-info dd {
+  margin: 0;
+  text-transform: none;
+}
+.karto-info-id {
+  font:
+    11px ui-monospace,
+    monospace;
+  word-break: break-all;
+  color: var(--karto-muted-foreground);
+}
+@media (max-width: 767px) {
+  .karto-info {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-height: 50%;
+    border-radius: 14px 14px 0 0;
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "bagua",
+  "nombre": "Bagua",
+  "descripcion": "Bagua Capital, provincia de Bagua, Amazonas, Perú",
+  "centro": [-78.5367, -5.6378],
+  "zoom": {
+    "inicial": 15.6,
+    "minimo": 12,
+    "maximo": 20
+  },
+  "extensionUrbana": [
+    [-78.575, -5.69],
+    [-78.49, -5.6]
+  ],
+  "limites": [
+    [-78.585, -5.7],
+    [-78.48, -5.59]
+  ],
+  "revisionTeselas": "2026-11-22",
+  "overture": "2026-09-23.1",
+  "atribucion": "<a href=\"https://overturemaps.org\" target=\"_blank\" rel=\"noreferrer\">© Overture Maps Foundation</a> (2026-09-23.1) · <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\" rel=\"noreferrer\">© OpenStreetMap</a> (ODbL) · Noto Sans (OFL)",
+  "alturas": {
+    "fuente": "Google Open Buildings 2.5D 2023",
+    "atribucion": "Alturas: © Google 2023 (CC BY 4.0) · © GlobalBuildingAtlas/TUM 2019 (CC BY-NC 4.0)"
+  },
+  "complemento": {
+    "atribucion": "Edificaciones complementarias: © OpenStreetMap (ODbL) · © Microsoft (ODbL) · © Google 2023 (CC BY 4.0)"
+  }
+}

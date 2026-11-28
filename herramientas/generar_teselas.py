@@ -21,7 +21,8 @@ IN_DIR = ROOT / 'datos-fuente' / CIUDAD
 CONFIG = IN_DIR / 'ambito.json'
 OUT_DIR = ROOT / 'datos' / CIUDAD
 IMAGE = 'bagua-master-tiles:2.79.0'
-LAYERS = ['red_vial', 'calles_rotulo', 'conectores', 'edificios', 'usos_suelo', 'agua', 'terreno', 'lugares', 'partes_edificio']
+LAYERS = ['red_vial', 'calles_rotulo', 'conectores', 'edificios', 'usos_suelo', 'agua', 'terreno', 'lugares', 'partes_edificio',
+          'cobertura', 'arboles', 'manzanas', 'veredas', 'equipamientos', 'bermas']
 
 
 def sha256(path):

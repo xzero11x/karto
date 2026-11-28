@@ -7,5 +7,5 @@ export declare function buildStyle(theme?: MapTheme, origen?: Origen): StyleSpec
 /** Capas consultables al tocar el mapa, de la más específica a la más general, y el tipo de elemento. */
 export declare const SELECTABLE_LAYERS: {
     layer: string;
-    tabla: 'lugar' | 'conector' | 'red_vial' | 'edificio' | 'edificio_complemento' | 'agua' | 'uso_suelo' | 'terreno';
+    tabla: 'lugar' | 'conector' | 'red_vial' | 'edificio' | 'edificio_complemento' | 'agua' | 'uso_suelo' | 'equipamiento' | 'manzana' | 'terreno';
 }[];

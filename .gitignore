@@ -1,3 +1,6 @@
 node_modules/
 *.mbtiles
 .DS_Store
+herramientas/base/vista/
+__pycache__/
+datos-fuente/*/privado/

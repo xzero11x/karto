@@ -9,4 +9,6 @@ export { DEFAULT_THEME, MAP_THEMES, THEME_NAMES, type MapTheme } from './mapa/th
 export { loadMapRuntime } from './mapa/runtime';
 export { CIUDAD_POR_DEFECTO, DATOS_POR_DEFECTO, dataUrl, WORKER_URL, type Origen } from './config';
 export { useCiudad } from './datos';
-export type { Ciudad, Correcciones, Seleccion, Tabla, Vista } from './tipos';
+export type { Ciudad, Correcciones, Modo3d, Seleccion, Tabla, Vista } from './tipos';
+export type { EstadoCiudad } from './mapa/mapa';
+export { Leyenda } from './componentes/leyenda';

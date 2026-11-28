@@ -212,8 +212,11 @@ describe('legibilidad cartográfica', () => {
       const style = buildStyle(name);
       const paint = (id: string) =>
         JSON.stringify((style.layers.find((l) => l.id === id) as { paint: unknown }).paint);
-      // Casas pequeñas y galpones no comparten color, igual en Overture y en la capa complementaria.
-      expect(paint('bm-edificios')).toContain('area_m2');
+      // Edificios: por tipo de techo en el tema a color; por tamaño en los demás. Igual en
+      // Overture y en la capa complementaria.
+      expect(paint('bm-edificios')).toContain(
+        MAP_THEMES[name].palette.techosColor ? 'slice' : 'area_m2',
+      );
       expect(paint('bm-edificios')).toBe(paint('bm-complemento'));
       // Avenidas con borde propio, distinto del de las calles locales.
       expect(paint('bm-vias-borde')).toContain('primary');

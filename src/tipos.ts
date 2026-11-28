@@ -6,6 +6,8 @@ export type Tabla =
   | 'edificio'
   | 'edificio_complemento'
   | 'uso_suelo'
+  | 'equipamiento'
+  | 'manzana'
   | 'agua'
   | 'terreno'
   | 'lugar';
@@ -19,6 +21,9 @@ export interface Seleccion {
 
 /** 2D plano; 2.5D con inclinación fija; 3D libre (inclinación hasta 85° y giro). */
 export type Vista = '2d' | '2.5d' | '3d';
+
+/** Cómo se dibujan los edificios en 2.5D/3D: volúmenes simples o la ciudad detallada. */
+export type Modo3d = 'clasico' | 'ciudad';
 
 /** Correcciones locales sobre Overture: elementos ocultos, lugares reubicados, edificaciones agregadas. */
 export interface Correcciones {
@@ -49,4 +54,9 @@ export interface Ciudad {
   alturas?: { fuente: string; atribucion: string };
   /** Huellas complementarias de otras fuentes abiertas. */
   complemento?: { atribucion: string };
+  /**
+   * Ciudad 3D detallada (ciudad3d.json): techos, fachadas, árboles, suelo y tráfico. El paquete
+   * se genera con el mismo `centro` de este perfil, que es su origen de coordenadas.
+   */
+  ciudad3d?: { atribucion: string };
 }

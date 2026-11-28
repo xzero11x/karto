@@ -44,17 +44,19 @@ Para actualizar a otra versión: `npm install github:xzero11x/karto#v1.1.0`.
 
 ### Props de `<Karto />`
 
-| Prop                                 | Para qué                                                         |
-| ------------------------------------ | ---------------------------------------------------------------- |
-| `ciudad`                             | Carpeta de datos de la ciudad (por defecto `bagua`)              |
-| `datos`                              | URL base de los datos (por defecto `/karto/`)                    |
-| `temaInicial` · `tema` + `onTema`    | Tema: `positron`, `bright`, `liberty`, `dark`, `fjord`, `mono`   |
-| `vistaInicial` · `vista` + `onVista` | Vista: `2d`, `2.5d`, `3d`                                        |
-| `controles`, `selectorTema`, `ficha` | Muestran u ocultan cada parte de la interfaz (por defecto todas) |
-| `alturasModeladas`                   | Muestra también las alturas modeladas (por defecto sí)           |
-| `onSeleccion`                        | Elemento tocado: `{ tabla, id, propiedades }` o `null`           |
-| `onMapa`                             | Instancia de MapLibre lista, para añadir capas propias           |
-| `children`                           | Paneles o leyendas propios encima del mapa                       |
+| Prop                                    | Para qué                                                                                       |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `ciudad`                                | Carpeta de datos de la ciudad (por defecto `bagua`)                                            |
+| `datos`                                 | URL base de los datos (por defecto `/karto/`)                                                  |
+| `temaInicial` · `tema` + `onTema`       | Tema: `positron`, `bagua` (a color), `bright`, `liberty`, `dark`, `fjord`, `mono`              |
+| `vistaInicial` · `vista` + `onVista`    | Vista: `2d`, `2.5d`, `3d`                                                                      |
+| `modo3dInicial` · `modo3d` + `onModo3d` | Edificios en 2.5D/3D: `clasico` (volúmenes simples, por defecto) o `ciudad` (ciudad detallada) |
+| `leyenda`                               | Muestra la leyenda de colores (por defecto sí)                                                 |
+| `controles`, `selectorTema`, `ficha`    | Muestran u ocultan cada parte de la interfaz (por defecto todas)                               |
+| `alturasModeladas`                      | Muestra también las alturas modeladas (por defecto sí)                                         |
+| `onSeleccion`                           | Elemento tocado: `{ tabla, id, propiedades }` o `null`                                         |
+| `onMapa`                                | Instancia de MapLibre lista, para añadir capas propias                                         |
+| `children`                              | Paneles o leyendas propios encima del mapa                                                     |
 
 **Capas propias.** Con `onMapa` se pueden añadir capas (rutas, puntos, zonas). Para que queden
 debajo de los nombres de calles, se insertan antes de la capa `bm-calles-texto`. Los id de capa
@@ -72,20 +74,21 @@ npm test           # valida el estilo de MapLibre y las anchuras de las vías
 npm run build      # compila la librería en dist/
 ```
 
-| Ruta                     | Qué es                                                               |
-| ------------------------ | -------------------------------------------------------------------- |
-| `src/karto.tsx`          | Componente completo: mapa, controles, temas, alturas y ficha         |
-| `src/mapa/style.ts`      | Estilo: capas, anchuras de vías, edificios 2D/3D, rótulos            |
-| `src/mapa/themes.ts`     | Paletas de los seis temas                                            |
-| `src/mapa/mapa.tsx`      | Visor MapLibre: vistas, cámara, selección, alturas y correcciones    |
-| `src/componentes/`       | Controles, selector de tema y ficha                                  |
-| `src/estilos.css`        | Estilos, todos bajo `.karto` (variables `--karto-*`)                 |
-| `vite.mjs`, `bin/`       | Plugin de Vite y comando `karto-datos`                               |
-| `datos/fuentes/`         | Tipografía Noto Sans, común a todas las ciudades                     |
-| `datos/<ciudad>/`        | `ciudad.json`, `teselas.pmtiles`, alturas, complemento, correcciones |
-| `datos-fuente/<ciudad>/` | Capas de origen de las teselas (GeoJSON por líneas)                  |
-| `herramientas/`          | Generación de teselas con Docker (tippecanoe + pmtiles)              |
-| `demo/`                  | Página de desarrollo                                                 |
+| Ruta                     | Qué es                                                                             |
+| ------------------------ | ---------------------------------------------------------------------------------- |
+| `src/karto.tsx`          | Componente completo: mapa, controles, temas, alturas y ficha                       |
+| `src/mapa/style.ts`      | Estilo: capas, anchuras de vías, edificios 2D/3D, rótulos                          |
+| `src/mapa/themes.ts`     | Paletas de los seis temas                                                          |
+| `src/mapa/mapa.tsx`      | Visor MapLibre: vistas, cámara, selección, alturas y correcciones                  |
+| `src/componentes/`       | Controles, selector de tema y ficha                                                |
+| `src/estilos.css`        | Estilos, todos bajo `.karto` (variables `--karto-*`)                               |
+| `vite.mjs`, `bin/`       | Plugin de Vite y comando `karto-datos`                                             |
+| `datos/fuentes/`         | Tipografía Noto Sans, común a todas las ciudades                                   |
+| `datos/<ciudad>/`        | `ciudad.json`, `teselas.pmtiles`, alturas, complemento, correcciones               |
+| `datos-fuente/<ciudad>/` | Capas de origen de las teselas (GeoJSON por líneas)                                |
+| `src/mapa/ciudad/`       | Ciudad 3D detallada: motor WebGL2 propio (worker, suelo, techos, árboles, tráfico) |
+| `herramientas/`          | Generación de teselas con Docker (tippecanoe + pmtiles), capas extra y ciudad 3D   |
+| `demo/`                  | Página de desarrollo                                                               |
 
 ### Publicar una versión
 
@@ -106,6 +109,27 @@ git push --follow-tags
    atribución). Alturas, complemento y correcciones son opcionales.
 4. Úsala con `<Karto ciudad="<ciudad>" />`.
 
+### Ciudad 3D detallada
+
+El modo `ciudad` dibuja la ciudad con techos a una y dos aguas, fachadas, ventanas, sombras,
+árboles reales, suelo por sectores, río, tráfico y peatones de ejemplo. Se activa con el botón
+**Ciudad** de los controles (o `modo3dInicial="ciudad"`) y solo aparece si la ciudad tiene
+`datos/<ciudad>/ciudad3d.json` y la clave `ciudad3d` en su `ciudad.json`. El 3D clásico no cambia.
+
+El paquete y los árboles se generan desde la base de webgis-residuos (rama `main`, con los datos
+importados); los pasos están en `herramientas/ciudad3d/LEEME.md`. El paquete usa como origen de
+coordenadas el `centro` de `ciudad.json`: si cambia el centro, hay que regenerarlo.
+
+### Capas extra de las teselas
+
+Cobertura del suelo, árboles y superficie de las calles:
+
+```sh
+python herramientas/capas_extra.py bagua --parquet <descarga>/transportation_segment.parquet
+```
+
+Requiere `duckdb` y lee la cobertura de Overture en S3. Luego hay que regenerar las teselas.
+
 ### Regenerar las teselas
 
 ```sh
@@ -124,6 +148,10 @@ para que los navegadores no usen una copia anterior.
 - Alturas: Google Open Buildings 2.5D Temporal 2023 (CC BY 4.0); el resto son alturas modeladas.
   La atribución cita también GlobalBuildingAtlas (CC BY-NC 4.0, uso no comercial).
 - Edificaciones complementarias: OpenStreetMap y Microsoft (ODbL), Google (CC BY 4.0).
+- Cobertura del suelo: ESA WorldCover vía Overture (CC BY 4.0).
+- Árboles: Meta y World Resources Institute, High Resolution Canopy Height Maps v1 (CC BY 4.0).
+- Ciudad 3D: techos y paredes según el Censo 2017 (INEI); los postes, las bancas, las señales,
+  los vehículos y los peatones son representativos, no un levantamiento.
 - Tipografía Noto Sans (SIL Open Font License, `datos/fuentes/OFL.txt`).
 
 Las atribuciones se muestran en el mapa y deben mantenerse visibles.

@@ -55,9 +55,35 @@ const positron = {
   // Opacidad de las huellas (2D) y de los volúmenes (2.5D/3D).
   opacidadEdificio: 0.95,
   opacidadVolumen: 1,
+  // Cobertura del suelo (Overture land_cover) y árboles detectados por satélite.
+  cobBosque: '#cfe2c0',
+  cobCultivo: '#e2ecc8',
+  cobPasto: '#dbe8cc',
+  cobMatorral: '#d6e3c6',
+  cobDesnudo: '#e8e4da',
+  cobHumedal: '#cfe5e3',
+  arbol: '#9cc48a',
+  arbolBorde: '#7fa86e',
+  arbolSombra: '#5c6b58',
+  // Líneas centrales de avenidas y carreteras.
+  ejeVia: '#ffffff',
+  ejeViaPrincipal: '#f2c94c',
+  // Edificios: true colorea cada huella con su tipo de techo (calamina, teja, losa).
+  techosColor: false as boolean,
+  // Edificios 3D: 1 = de noche (ventanas encendidas); saturación de las fachadas pintadas.
+  noche: 0,
+  saturacion: 0.75,
 };
 type Palette = typeof positron;
-export const THEME_NAMES = ['positron', 'bright', 'liberty', 'dark', 'fjord', 'mono'] as const;
+export const THEME_NAMES = [
+  'bagua',
+  'positron',
+  'bright',
+  'liberty',
+  'dark',
+  'fjord',
+  'mono',
+] as const;
 export type MapTheme = (typeof THEME_NAMES)[number];
 /** Tema con el que se abre el visor. */
 export const DEFAULT_THEME: MapTheme = 'positron';
@@ -66,6 +92,53 @@ const variant = (label: string, colors: Partial<Palette>) => ({
   palette: { ...positron, ...colors },
 });
 export const MAP_THEMES: Record<MapTheme, ReturnType<typeof variant>> = {
+  // Bagua a color: suelo de tierra clara, bosque seco en las laderas, arrozales y jardines verdes,
+  // techos de calamina, teja y losa.
+  bagua: variant('Color', {
+    // Suelo de arcilla ocre rojiza; laderas de bosque seco; arrozales en el valle; río turbio.
+    fondo: '#dccaa6',
+    terreno: '#dccaa6',
+    residencial: '#e4d5b8',
+    verde: '#b2d98e',
+    verdeBorde: '#86bf65',
+    deporte: '#9bd69a',
+    cementerio: '#c1d7ad',
+    educacion: '#e4d3f5',
+    salud: '#f7cccc',
+    agua: '#8fb0ad',
+    aguaLinea: '#6f9894',
+    aguaTexto: '#2f5f5b',
+    edificioBorde: '#7d6f60',
+    edificioSombra: '#5e5a4c',
+    // Calles reales: asfalto en carreteras y avenidas, concreto en las calles, veredas claras.
+    viaBorde: '#eee8d8',
+    viaBordeMayor: '#e9e1cc',
+    troncal: '#62686e',
+    principal: '#71777d',
+    secundaria: '#868b90',
+    local: '#d7d4cb',
+    cobBosque: '#7b8a52',
+    cobCultivo: '#9fcb5c',
+    cobPasto: '#c6bf86',
+    cobMatorral: '#b2a674',
+    cobDesnudo: '#d2ac80',
+    cobHumedal: '#86b59f',
+    arbol: '#3f6a2b',
+    arbolBorde: '#2c4f1e',
+    arbolSombra: '#2b2a1c',
+    sendero: '#b98f62',
+    senderoClaro: '#efdcbc',
+    texto: '#2c3134',
+    textoSecundario: '#565b52',
+    rutaTexto: '#97560f',
+    seleccion: '#0b66f5',
+    sombra: '#4d5246',
+    // Cielo despejado azul intenso y bruma azulada sobre los cerros (no blanca).
+    cielo: '#5aa9e6',
+    horizonte: '#c6dbe8',
+    techosColor: true,
+    saturacion: 1,
+  }),
   positron: variant('Positron', {}),
   bright: variant('Bright', {
     fondo: '#f8f4eb',
@@ -107,6 +180,7 @@ export const MAP_THEMES: Record<MapTheme, ReturnType<typeof variant>> = {
     luz: '#ffffff',
     cielo: '#a9d4f0',
     horizonte: '#f8f1e2',
+    saturacion: 0.95,
   }),
   liberty: variant('Liberty', {
     fondo: '#f2eee3',
@@ -150,6 +224,7 @@ export const MAP_THEMES: Record<MapTheme, ReturnType<typeof variant>> = {
     luz: '#ffffff',
     cielo: '#a8d2ee',
     horizonte: '#f5f0e4',
+    saturacion: 0.9,
   }),
   dark: variant('Dark', {
     fondo: '#0f151c',
@@ -202,6 +277,18 @@ export const MAP_THEMES: Record<MapTheme, ReturnType<typeof variant>> = {
     luz: '#dfeaf7',
     cielo: '#070d14',
     horizonte: '#22364a',
+    cobBosque: '#133126',
+    cobCultivo: '#1a3824',
+    cobPasto: '#173323',
+    cobMatorral: '#152f20',
+    cobDesnudo: '#22292b',
+    cobHumedal: '#113436',
+    arbol: '#1d5a39',
+    arbolBorde: '#113b25',
+    arbolSombra: '#000000',
+    ejeVia: '#cfd8df',
+    noche: 1,
+    saturacion: 0.8,
   }),
   fjord: variant('Fjord', {
     fondo: '#eaf0f2',
@@ -243,6 +330,7 @@ export const MAP_THEMES: Record<MapTheme, ReturnType<typeof variant>> = {
     luz: '#ffffff',
     cielo: '#a9cfe6',
     horizonte: '#e8f0f3',
+    saturacion: 0.5,
   }),
   // Monocromo translúcido: solo blancos, grises y negro; las huellas dejan ver el suelo y los
   // volúmenes se ven como vidrio esmerilado.
@@ -299,5 +387,16 @@ export const MAP_THEMES: Record<MapTheme, ReturnType<typeof variant>> = {
     horizonte: '#f6f6f6',
     opacidadEdificio: 0.62,
     opacidadVolumen: 0.72,
+    cobBosque: '#dadada',
+    cobCultivo: '#e6e6e6',
+    cobPasto: '#e2e2e2',
+    cobMatorral: '#dedede',
+    cobDesnudo: '#ececec',
+    cobHumedal: '#e0e0e0',
+    arbol: '#a8a8a8',
+    arbolBorde: '#8a8a8a',
+    arbolSombra: '#777777',
+    ejeViaPrincipal: '#ffffff',
+    saturacion: 0,
   }),
 };

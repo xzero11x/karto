@@ -1,7 +1,7 @@
 {
   "archivo": "teselas.pmtiles",
-  "bytes": 7277673,
-  "sha256": "2353565e2e30958cb03e625fd5f25b3c2dbaf144468438b2599ce36632f1db61",
+  "bytes": 9220119,
+  "sha256": "8842381467a08a12758596efd156d53e298ffe5434cdf356df2072fa5223aee6",
   "zoom": [
     12,
     16
@@ -14,20 +14,32 @@
     "usos_suelo",
     "agua",
     "terreno",
-    "lugares"
+    "lugares",
+    "cobertura",
+    "arboles",
+    "manzanas",
+    "veredas",
+    "equipamientos",
+    "bermas"
   ],
   "capas_vacias_no_teseladas": [
     "partes_edificio"
   ],
   "entradas_sha256": {
-    "red_vial": "0abfcefa7c15ce5876dafc6ed01385f8cc374dd31ea790eb91cb0e7e074e435c",
-    "calles_rotulo": "29dfacb1c1de5bc78f5db7dcecddc41502163597e03f80e6b5a2e16539436dbc",
-    "conectores": "b45d6a96e506ead3a030ea67617fdeff03104015f009b6dc692525509d02e76f",
-    "edificios": "4dc492ea18e1dd9049fedc3a5dd4361724ccff430784a2108c4a6085ba98bf05",
-    "usos_suelo": "ada1dcced6ff8ed89653e9055d2a3b476399b24efbb33f9d4bfa09147fffb26b",
+    "red_vial": "488524bde7ce7d4be0c8653ebf271d1b16529ae4fd98308a41b2440fbcb8ff20",
+    "calles_rotulo": "1a9b34efb0d1a30c48aa280e720b59466ef226c0bd78fecb11c92fc16eb93f0e",
+    "conectores": "9d37643a7db7790442f4379fbdb39f3c69523956372caba9066a7166a7188295",
+    "edificios": "bae84b569c079702bf9bb30dd88b83c9eb881f5756102a28d7b55eb83d28e0a5",
+    "usos_suelo": "def6d35a45eb50ac027655d15c96f00ef922d4c7ac091e77e8b26281a6cccd7e",
     "agua": "a293007b1e5323a8da039a49bcc42f232b2b793e1746c0039ef09eed03d9000c",
     "terreno": "5287ed8014c753d77c2e9cb8d4a67458adfd864babc5190fdcd8e3fc05a8c68b",
-    "lugares": "1fa6966e80a6c1723d6d3cbb9f0341ce0816a5676bf7a202869e06f5e70ee36b"
+    "lugares": "7bf68552c9af7a01c1ce7ae2af52c1e7a1e31945ab84195f1a6d04171b8f4aa6",
+    "cobertura": "ae3d360d381bcc33ac6c6c874a2b70f43b81ccbe15c7371e5d8b51ecf3cb2d23",
+    "arboles": "671a84dd77ffbf76ca558a1291c2f8e8679df393eeee6b233704dff0416171a4",
+    "manzanas": "374da6c4b7e48dfd48b2ff262b359d587c7c75531203942e713160453fdf9fc2",
+    "veredas": "76637a8679416b46dec4d106539d51a61fdba18eb2b17a69b779b4abd08c555e",
+    "equipamientos": "a9a468df0e14be72db4f10ab85580727abc6a4dc5693ec67ccaa9ef0b89ba5b4",
+    "bermas": "632e24907d880d63224d8ba0ea68f83e45996e347eefab255daeddf8e3ae2847"
   },
   "herramientas": [
     "tippecanoe v2.79.0",
@@ -36,5 +48,5 @@
   "nota_id": "El id Overture de cada elemento se conserva como propiedad id (tippecanoe no admite id de texto como id de entidad).",
   "imagen": "bagua-master-tiles:2.79.0",
   "atribucion": "Overture Maps Foundation 2026-09-23.1",
-  "generado_utc": "2026-11-26T00:38:56+00:00"
+  "generado_utc": "2026-11-27T17:13:29+00:00"
 }

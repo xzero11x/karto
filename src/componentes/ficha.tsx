@@ -9,6 +9,8 @@ const TITULO: Record<Tabla, string> = {
   conector: 'Intersección',
   lugar: 'Lugar',
   uso_suelo: 'Uso del suelo',
+  equipamiento: 'Equipamiento',
+  manzana: 'Manzana',
   agua: 'Agua',
   terreno: 'Terreno',
 };
@@ -23,11 +25,36 @@ const ETIQUETA: Record<string, string> = {
   fuente: 'Fuente',
   confianza: 'Confianza',
   origen_altura: 'Origen de la altura',
+  ancho: 'Ancho de calzada',
+  paramento_izq: 'Fachada izquierda (del eje)',
+  paramento_der: 'Fachada derecha (del eje)',
 };
+/** Clases de OpenStreetMap en castellano. */
+const CLASE: Record<string, string> = {
+  townhall: 'municipalidad',
+  place_of_worship: 'templo',
+  hospital: 'hospital',
+  clinic: 'clínica',
+  police: 'comisaría',
+  marketplace: 'mercado',
+  school: 'colegio',
+  college: 'instituto',
+  university: 'universidad',
+  bus_station: 'terminal terrestre',
+  bank: 'banco',
+  stadium: 'estadio',
+  cemetery: 'cementerio',
+  swimming_pool: 'piscina',
+  sports_centre: 'centro deportivo',
+  pitch: 'cancha',
+  park: 'parque',
+};
+const METROS = new Set(['altura_m', 'ancho', 'paramento_izq', 'paramento_der']);
 
 function valor(clave: string, v: unknown) {
   if (clave === 'area_m2') return `${Number(v).toLocaleString('es-PE')} m²`;
-  if (clave === 'altura_m') return `${Number(v).toLocaleString('es-PE')} m`;
+  if (METROS.has(clave)) return `${Number(v).toLocaleString('es-PE')} m`;
+  if (clave === 'clase' && typeof v === 'string' && v in CLASE) return CLASE[v];
   return String(v).replaceAll('_', ' ');
 }
 

@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { Controles } from './componentes/controles';
 import { Ficha } from './componentes/ficha';
+import { Leyenda } from './componentes/leyenda';
 import { SelectorEstilo } from './componentes/selector-estilo';
 import { CIUDAD_POR_DEFECTO, DATOS_POR_DEFECTO, type Origen } from './config';
 import { useAlturas, useCiudad, useComplemento, useCorrecciones } from './datos';
-import { Mapa } from './mapa/mapa';
+import { Mapa, type EstadoCiudad } from './mapa/mapa';
 import { DEFAULT_THEME, type MapTheme } from './mapa/themes';
-import type { Seleccion, Vista } from './tipos';
+import type { Modo3d, Seleccion, Vista } from './tipos';
 
 export interface KartoProps {
   /** URL base de los datos (por defecto /karto/, la que publica el plugin `karto/vite`). */
@@ -22,6 +23,16 @@ export interface KartoProps {
   vistaInicial?: Vista;
   vista?: Vista;
   onVista?: (vista: Vista) => void;
+  /**
+   * Edificios en 2.5D/3D: 'clasico' (volúmenes simples, por defecto) o 'ciudad' (techos, fachadas,
+   * árboles, suelo y tráfico; solo si la ciudad trae ciudad3d.json). Con `modo3d` y `onModo3d` lo
+   * controla la app.
+   */
+  modo3dInicial?: Modo3d;
+  modo3d?: Modo3d;
+  onModo3d?: (modo: Modo3d) => void;
+  /** Muestra la leyenda de colores (por defecto sí). */
+  leyenda?: boolean;
   /** Muestra los controles de navegación y vistas (por defecto sí). */
   controles?: boolean;
   /** Muestra el selector de tema (por defecto sí). */
@@ -49,6 +60,10 @@ export function Karto({
   vistaInicial = '2d',
   vista: vistaControlada,
   onVista,
+  modo3dInicial = 'clasico',
+  modo3d: modo3dControlado,
+  onModo3d,
+  leyenda = true,
   controles = true,
   selectorTema = true,
   ficha: conFicha = true,
@@ -64,8 +79,11 @@ export function Karto({
   const [vistaPropia, setVistaPropia] = useState<Vista>(vistaInicial);
   const [mostrarSimuladas, setMostrarSimuladas] = useState(alturasModeladas);
   const [fallo, setFallo] = useState(false);
+  const [modo3dPropio, setModo3dPropio] = useState<Modo3d>(modo3dInicial);
+  const [estadoCiudad, setEstadoCiudad] = useState<EstadoCiudad | null>(null);
   const tema = temaControlado ?? temaPropio;
   const vista = vistaControlada ?? vistaPropia;
+  const modo3d = modo3dControlado ?? modo3dPropio;
   const mode3d = vista !== '2d';
 
   const ciudad = useCiudad(datos, ciudadId);
@@ -98,6 +116,11 @@ export function Karto({
     setVistaPropia(v);
     onVista?.(v);
   };
+  const cambiarModo3d = (m: Modo3d) => {
+    setModo3dPropio(m);
+    onModo3d?.(m);
+  };
+  const conCiudad = Boolean(ciudad.datos?.ciudad3d) && modo3d === 'ciudad';
 
   const resumen = useMemo(() => {
     const cuenta = { estimada: 0, simulada: 0 };
@@ -130,6 +153,7 @@ export function Karto({
           seleccion={seleccion}
           vista={vista}
           tema={tema}
+          modo3d={modo3d}
           alturas={alturas.datos}
           mostrarSimuladas={mostrarSimuladas}
           complemento={complemento.datos}
@@ -137,18 +161,36 @@ export function Karto({
           onSeleccion={elegir}
           onMapa={listo}
           onFallo={onFallo}
+          onCiudad={setEstadoCiudad}
         />
       )}
       {controles && ciudad.datos && (
-        <Controles ciudad={ciudad.datos} mapa={mapa} vista={vista} onVista={cambiarVista} />
+        <Controles
+          ciudad={ciudad.datos}
+          mapa={mapa}
+          vista={vista}
+          onVista={cambiarVista}
+          modo3d={modo3d}
+          onModo3d={cambiarModo3d}
+        />
       )}
       {selectorTema && <SelectorEstilo tema={tema} onCambio={cambiarTema} />}
+      {leyenda && <Leyenda tema={tema} vista={vista} ciudad3d={conCiudad} />}
       {mode3d && (
         <details className="karto-height-notice">
           <summary>{vista === '3d' ? 'Vista 3D libre' : 'Vista 2.5D'} · alturas</summary>
           {vista === '3d' && (
             <span className="karto-height-observed">
               Gira e inclina con clic derecho o Ctrl + arrastrar; en pantalla táctil, con dos dedos.
+            </span>
+          )}
+          {conCiudad && (
+            <span className="karto-height-observed" data-testid="karto-estado-ciudad">
+              {estadoCiudad?.estado === 'error'
+                ? 'No se pudo armar la ciudad 3D. Los volúmenes simples siguen disponibles.'
+                : estadoCiudad?.estado === 'lista' && estadoCiudad.stats
+                  ? `Ciudad 3D: ${estadoCiudad.stats.edificios.toLocaleString('es-PE')} edificios, ${estadoCiudad.stats.arboles.toLocaleString('es-PE')} árboles por satélite y ${estadoCiudad.stats.vehiculos} vehículos de ejemplo`
+                  : 'Armando la ciudad 3D…'}
             </span>
           )}
           {alturas.error ? (

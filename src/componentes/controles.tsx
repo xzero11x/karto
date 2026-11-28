@@ -1,18 +1,23 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
-import { Box, Compass, Crosshair, Maximize2, Minus, Orbit, Plus } from 'lucide-react';
-import type { Ciudad, Vista } from '../tipos';
+import { Box, Building2, Compass, Crosshair, Maximize2, Minus, Orbit, Plus } from 'lucide-react';
+import type { Ciudad, Modo3d, Vista } from '../tipos';
 
-// Controles: zoom, centrar en la ciudad, extensión urbana, norte arriba y vistas 2.5D / 3D.
+// Controles: zoom, centrar en la ciudad, extensión urbana, norte arriba, vistas 2.5D / 3D y,
+// si la ciudad trae su paquete, el modo de edificios en 3D (volúmenes simples o ciudad detallada).
 export function Controles({
   ciudad,
   mapa,
   vista,
   onVista,
+  modo3d,
+  onModo3d,
 }: {
   ciudad: Ciudad;
   mapa: MapLibreMap | null;
   vista: Vista;
   onVista: (vista: Vista) => void;
+  modo3d: Modo3d;
+  onModo3d: (modo: Modo3d) => void;
 }) {
   const off = !mapa;
   return (
@@ -90,6 +95,29 @@ export function Controles({
         <Orbit size={16} />
         <span>3D</span>
       </button>
+      {ciudad.ciudad3d && (
+        <button
+          type="button"
+          className="karto-controls-3d"
+          data-testid="karto-modo-ciudad"
+          aria-pressed={modo3d === 'ciudad'}
+          aria-label="Ciudad 3D detallada"
+          title={
+            modo3d === 'ciudad'
+              ? 'Ciudad 3D detallada: techos, fachadas, árboles y suelo. Clic para volver a volúmenes simples'
+              : 'Ciudad 3D detallada: techos, fachadas, árboles y suelo'
+          }
+          disabled={off}
+          onClick={() => {
+            const next = modo3d === 'ciudad' ? 'clasico' : 'ciudad';
+            onModo3d(next);
+            if (next === 'ciudad' && vista === '2d') onVista('3d');
+          }}
+        >
+          <Building2 size={16} />
+          <span>Ciudad</span>
+        </button>
+      )}
     </div>
   );
 }

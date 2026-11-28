@@ -1,6 +1,7 @@
 import type { ExpressionSpecification, StyleSpecification } from 'maplibre-gl';
 import { MAP_THEMES, type MapTheme } from './themes';
 import { ATTRIBUTION, GLYPHS_URL, TILES_URL, type Origen } from '../config';
+import { roofColorExpression } from './ciudad/palette';
 
 // Estilo cartográfico de karto. Una sola fuente estructural: las PMTiles de
 // Overture 2026-09-23.1 servidas junto a los demás datos del mapa. Sin estilos ni mapas base externos.
@@ -78,7 +79,7 @@ const atScale = (zoom: number, extra: number): ExpressionSpecification => [
     '+',
     [
       '*',
-      ['coalesce', ['get', 'ancho_m'], byClass((h) => h.metros)],
+      ['coalesce', ['get', 'ancho'], ['get', 'ancho_m'], byClass((h) => h.metros)],
       PX_PER_M_Z16 * 2 ** (zoom - 16),
     ],
     extra,
@@ -139,6 +140,17 @@ const shadowOffset = (metros: number, hacia: number): ExpressionSpecification =>
 /** Rumbo desde el que llega la luz en la vista 2.5D; la sombra del suelo cae al lado opuesto. */
 const LIGHT_AZIMUTH = 295;
 
+/** Radio de copa en píxeles: el radio real (m) a la escala de cada zoom. */
+const treeRadius = (): ExpressionSpecification => [
+  'interpolate',
+  ['exponential', 2],
+  ['zoom'],
+  14,
+  ['*', ['coalesce', ['get', 'r'], 3], 2 ** 14 / 77_892],
+  MAX_ZOOM_STYLE,
+  ['*', ['coalesce', ['get', 'r'], 3], 2 ** MAX_ZOOM_STYLE / 77_892],
+];
+
 const MAJOR_ROADS: ExpressionSpecification = [
   'match',
   ['get', 'clase'],
@@ -167,8 +179,13 @@ const PATHS: ExpressionSpecification = [
 
 type Colors = (typeof MAP_THEMES)[MapTheme]['palette'];
 
-/** Relleno de edificios por superficie de huella: las casas pequeñas se leen distinto de los galpones. */
-const buildingFill = (P: Colors): ExpressionSpecification => [
+/**
+ * Relleno de edificios. Con `techosColor`, cada huella toma el color de su techo (el mismo que en
+ * 3D); si no, un tono por superficie: las casas pequeñas se leen distinto de los galpones.
+ */
+const buildingFill = (P: Colors): ExpressionSpecification =>
+  P.techosColor ? (roofColorExpression() as ExpressionSpecification) : buildingFillByArea(P);
+const buildingFillByArea = (P: Colors): ExpressionSpecification => [
   'interpolate',
   ['linear'],
   ['coalesce', ['get', 'area_m2'], 60],
@@ -300,6 +317,98 @@ export function buildStyle(theme: MapTheme = 'positron', origen?: Origen): Style
         filter: ['==', ['geometry-type'], 'Polygon'],
         paint: { 'fill-color': PALETTE.terreno },
       },
+      // Cobertura del suelo: bosque, cultivos (arrozales), pastos, matorral, suelo desnudo.
+      {
+        id: 'bm-cobertura',
+        type: 'fill',
+        source: SOURCE,
+        'source-layer': 'cobertura',
+        paint: {
+          'fill-color': [
+            'match',
+            ['get', 'clase'],
+            'forest',
+            PALETTE.cobBosque,
+            'crop',
+            PALETTE.cobCultivo,
+            'grass',
+            PALETTE.cobPasto,
+            'shrub',
+            PALETTE.cobMatorral,
+            'barren',
+            PALETTE.cobDesnudo,
+            ['wetland', 'mangrove'],
+            PALETTE.cobHumedal,
+            PALETTE.terreno,
+          ],
+          // La cobertura satelital (10 m) es gruesa dentro de la ciudad: se atenúa al acercarse.
+          'fill-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            13,
+            ['match', ['get', 'clase'], 'urban', 0, 0.9],
+            16,
+            ['match', ['get', 'clase'], 'urban', 0, 'forest', 0.6, 0.38],
+          ],
+        },
+      },
+      // Base urbana: veredas (corredor menos calzada) y manzanas (caras de la red vial menos los
+      // corredores). Ningún edificio sale de su manzana ni pisa la vía (herramientas/base).
+      {
+        id: 'bm-veredas',
+        type: 'fill',
+        source: SOURCE,
+        'source-layer': 'veredas',
+        minzoom: 14,
+        paint: {
+          'fill-color': PALETTE.viaBorde,
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 14, 0, 15.5, 1],
+        },
+      },
+      {
+        id: 'bm-manzanas',
+        type: 'fill',
+        source: SOURCE,
+        'source-layer': 'manzanas',
+        paint: {
+          'fill-color': PALETTE.residencial,
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 15, 1],
+        },
+      },
+      // Bermas centrales de las avenidas de doble calzada (césped con palmeras).
+      {
+        id: 'bm-bermas',
+        type: 'fill',
+        source: SOURCE,
+        'source-layer': 'bermas',
+        minzoom: 14,
+        paint: { 'fill-color': PALETTE.verde },
+      },
+      {
+        id: 'bm-equipamientos',
+        type: 'fill',
+        source: SOURCE,
+        'source-layer': 'equipamientos',
+        paint: {
+          'fill-color': [
+            'match',
+            ['get', 'clase'],
+            ['school', 'college', 'university'],
+            PALETTE.educacion,
+            ['hospital', 'clinic'],
+            PALETTE.salud,
+            'cemetery',
+            PALETTE.cementerio,
+            ['stadium', 'pitch', 'sports_centre'],
+            PALETTE.deporte,
+            'park',
+            PALETTE.verde,
+            PALETTE.residencial,
+          ],
+          'fill-opacity': 0.9,
+        },
+      },
       {
         id: 'bm-usos',
         type: 'fill',
@@ -332,6 +441,19 @@ export function buildStyle(theme: MapTheme = 'positron', origen?: Origen): Style
         minzoom: 14,
         filter: ['match', ['get', 'clase'], ['park', 'pitch', 'stadium', 'resort'], true, false],
         paint: { 'line-color': PALETTE.verdeBorde, 'line-width': 1 },
+      },
+      // Línea de fachada (borde de manzana).
+      {
+        id: 'bm-manzanas-borde',
+        type: 'line',
+        source: SOURCE,
+        'source-layer': 'manzanas',
+        minzoom: 15.5,
+        paint: {
+          'line-color': PALETTE.edificioBorde,
+          'line-opacity': 0.35,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 15.5, 0.4, 19, 1.2],
+        },
       },
       {
         id: 'bm-agua-area',
@@ -402,6 +524,32 @@ export function buildStyle(theme: MapTheme = 'positron', origen?: Origen): Style
         filter: MAJOR_ROADS,
         layout: { 'line-cap': 'round', 'line-join': 'round', 'line-sort-key': ROAD_SORT_KEY },
         paint: { 'line-color': roadColor, 'line-width': roadWidth() },
+      },
+      // Línea central de carreteras y avenidas (no en las de doble calzada).
+      {
+        id: 'bm-vias-eje',
+        type: 'line',
+        source: SOURCE,
+        'source-layer': 'red_vial',
+        minzoom: 16,
+        filter: [
+          'all',
+          ['match', ['get', 'clase'], ['trunk', 'primary', 'secondary'], true, false],
+          ['!=', ['get', 'doble_calzada'], 1],
+        ],
+        layout: { 'line-cap': 'butt' },
+        paint: {
+          'line-color': [
+            'match',
+            ['get', 'clase'],
+            ['trunk', 'primary'],
+            PALETTE.ejeViaPrincipal,
+            PALETTE.ejeVia,
+          ],
+          'line-width': ['interpolate', ['exponential', 2], ['zoom'], 16, 0.7, 20, 3],
+          'line-dasharray': [3, 3],
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 16, 0, 16.6, 0.9],
+        },
       },
       // Sombra corta bajo cada edificio: separa las manzanas del suelo sin recargar el mapa.
       {
@@ -503,6 +651,45 @@ export function buildStyle(theme: MapTheme = 'positron', origen?: Origen): Style
         paint: {
           'line-color': PALETTE.edificioBorde,
           'line-width': ['interpolate', ['linear'], ['zoom'], 15, 0.4, 18, 1.1],
+        },
+      },
+      // Árboles (copas detectadas por satélite): sombra corta y copa a su tamaño real.
+      {
+        id: 'bm-arboles-sombra',
+        type: 'circle',
+        source: SOURCE,
+        'source-layer': 'arboles',
+        minzoom: 14.5,
+        paint: {
+          'circle-radius': treeRadius(),
+          'circle-color': PALETTE.arbolSombra,
+          'circle-opacity': ['interpolate', ['linear'], ['zoom'], 14.5, 0, 15.5, 0.35],
+          'circle-translate': shadowOffset(1.6, LIGHT_AZIMUTH - 180),
+          'circle-translate-anchor': 'map',
+          'circle-pitch-alignment': 'map',
+        },
+      },
+      {
+        id: 'bm-arboles',
+        type: 'circle',
+        source: SOURCE,
+        'source-layer': 'arboles',
+        minzoom: 14.5,
+        paint: {
+          'circle-radius': treeRadius(),
+          'circle-color': [
+            'interpolate',
+            ['linear'],
+            ['coalesce', ['get', 'h'], 8],
+            4,
+            PALETTE.arbol,
+            20,
+            PALETTE.arbolBorde,
+          ],
+          'circle-opacity': ['interpolate', ['linear'], ['zoom'], 14.5, 0, 15.2, 0.92],
+          'circle-stroke-color': PALETTE.arbolBorde,
+          'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 15, 0.3, 19, 1.2],
+          'circle-pitch-alignment': 'map',
         },
       },
       {
@@ -870,6 +1057,8 @@ export const SELECTABLE_LAYERS: {
     | 'edificio_complemento'
     | 'agua'
     | 'uso_suelo'
+    | 'equipamiento'
+    | 'manzana'
     | 'terreno';
 }[] = [
   { layer: 'bm-complemento-3d', tabla: 'edificio_complemento' },
@@ -883,6 +1072,8 @@ export const SELECTABLE_LAYERS: {
   { layer: 'bm-complemento', tabla: 'edificio_complemento' },
   { layer: 'bm-agua-linea', tabla: 'agua' },
   { layer: 'bm-agua-area', tabla: 'agua' },
+  { layer: 'bm-equipamientos', tabla: 'equipamiento' },
   { layer: 'bm-usos', tabla: 'uso_suelo' },
+  { layer: 'bm-manzanas', tabla: 'manzana' },
   { layer: 'bm-terreno', tabla: 'terreno' },
 ];

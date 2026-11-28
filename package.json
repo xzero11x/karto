@@ -1,6 +1,6 @@
 {
   "name": "karto",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Mapa urbano para React con MapLibre y PMTiles: temas, vistas 2D, 2.5D y 3D, alturas de edificios. Primera ciudad: Bagua (Perú).",
@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "2.2.1",
+    "earcut": "^3.2.4",
     "lucide-react": "1.56.0",
     "pmtiles": "4.5.0"
   },

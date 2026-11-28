@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FeatureCollection } from 'geojson';
 import type {
   FilterSpecification,
@@ -7,9 +7,10 @@ import type {
   PointLike,
 } from 'maplibre-gl';
 import { loadMapRuntime } from './runtime';
-import { WORKER_URL, type Origen } from '../config';
-import type { Correcciones, Seleccion, Tabla, Vista } from '../tipos';
-import type { MapTheme } from './themes';
+import { WORKER_URL, dataUrl, type Origen } from '../config';
+import type { Correcciones, Modo3d, Seleccion, Tabla, Vista } from '../tipos';
+import { MAP_THEMES, type MapTheme } from './themes';
+import { CITY_LAYER, CityLayer, type CityStats } from './ciudad/city-layer';
 import { buildStyle, SELECTABLE_LAYERS } from './style';
 
 // Visor MapLibre de karto: teselas PMTiles propias, temas, 2D / 2.5D / 3D y alturas.
@@ -26,6 +27,22 @@ let camera: {
 /** Filtro que excluye los elementos marcados como inexistentes por una corrección local. */
 const notIn = (ids: string[]): FilterSpecification =>
   ['!', ['in', ['get', 'id'], ['literal', ids]]] as FilterSpecification;
+
+/** Estado de la ciudad 3D detallada (se descarga y arma en segundo plano). */
+export interface EstadoCiudad {
+  estado: 'cargando' | 'lista' | 'error';
+  stats?: CityStats;
+}
+
+/** En la ciudad 3D los lugares se eligen por símbolo; los edificios, por lo que se ve (GPU). */
+const POINT_LAYERS = ['bm-lugares-movidos', 'bm-lugares'];
+/** Volúmenes simples del 3D clásico. */
+const CLASSIC_3D = [
+  'bm-edificios-3d',
+  'bm-alturas-3d',
+  'bm-alturas-sombra',
+  'bm-alturas-seleccion',
+];
 
 /** Límites de inclinación por vista: 2.5D fija la inclinación; 3D libre la deja mover. */
 const PITCH: Record<Vista, readonly [number, number]> = {
@@ -53,6 +70,8 @@ export interface MapaProps {
   seleccion: Seleccion | null;
   vista: Vista;
   tema: MapTheme;
+  /** Edificios en 2.5D/3D: volúmenes simples ('clasico') o ciudad detallada ('ciudad'). */
+  modo3d: Modo3d;
   alturas?: FeatureCollection;
   mostrarSimuladas: boolean;
   complemento?: FeatureCollection;
@@ -60,6 +79,7 @@ export interface MapaProps {
   onSeleccion: (seleccion: Seleccion | null) => void;
   onMapa: (map: MapLibreMap | null) => void;
   onFallo: () => void;
+  onCiudad?: (estado: EstadoCiudad) => void;
 }
 
 export function Mapa({
@@ -67,6 +87,7 @@ export function Mapa({
   seleccion,
   vista,
   tema,
+  modo3d,
   alturas,
   mostrarSimuladas,
   complemento,
@@ -74,19 +95,32 @@ export function Mapa({
   onSeleccion,
   onMapa,
   onFallo,
+  onCiudad,
 }: MapaProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const callbacks = useRef({ onSeleccion, onMapa, onFallo });
+  const cityRef = useRef<CityLayer | null>(null);
+  const callbacks = useRef({ onSeleccion, onMapa, onFallo, onCiudad });
+  const ciudadRef = useRef(false);
   // El mapa se crea una sola vez con los valores iniciales; luego el tema cambia solo la pintura.
   const origenRef = useRef(origen);
   const temaRef = useRef(tema);
   const mode3d = vista !== '2d';
+  const conCiudad = Boolean(origen.ciudad.ciudad3d) && modo3d === 'ciudad';
+  const ciudad3d = mode3d && conCiudad;
   const [ready, setReady] = useState(false);
+  // Propiedades de cada edificio con altura: la ciudad 3D elige por id y la ficha las necesita.
+  const porId = useMemo(
+    () => new Map((alturas?.features ?? []).map((f) => [String(f.properties?.id), f.properties])),
+    [alturas],
+  );
+  const porIdRef = useRef(porId);
 
   useEffect(() => {
-    callbacks.current = { onSeleccion, onMapa, onFallo };
-  }, [onSeleccion, onMapa, onFallo]);
+    callbacks.current = { onSeleccion, onMapa, onFallo, onCiudad };
+    ciudadRef.current = ciudad3d;
+    porIdRef.current = porId;
+  }, [onSeleccion, onMapa, onFallo, onCiudad, ciudad3d, porId]);
 
   useEffect(() => {
     const element = container.current;
@@ -128,6 +162,15 @@ export function Mapa({
           .setAttribute('aria-label', `Mapa urbano de ${origenRef.current.ciudad.nombre}`);
         map.on('load', () => {
           if (disposed) return;
+          // Ciudad 3D detallada (capa propia sobre WebGL2): solo si la ciudad trae su paquete.
+          if (ciudad.ciudad3d) {
+            const city = new CityLayer(ciudad.centro);
+            city.onStats = (stats) => callbacks.current.onCiudad?.({ estado: 'lista', stats });
+            city.onError = () => callbacks.current.onCiudad?.({ estado: 'error' });
+            map!.addLayer(city, 'bm-complemento-seleccion');
+            map!.setLayoutProperty(CITY_LAYER, 'visibility', 'none');
+            cityRef.current = city;
+          }
           element.dataset.ready = 'true';
           setReady(true);
           callbacks.current.onMapa(map ?? null);
@@ -152,7 +195,25 @@ export function Mapa({
           console.warn('karto:', event.error?.message);
         });
         map.on('click', (event) => {
-          if (map) callbacks.current.onSeleccion(pickAt(map, event.point));
+          if (!map) return;
+          // En la ciudad 3D el edificio se elige por lo que se ve bajo el cursor, salvo que haya
+          // un lugar encima.
+          if (ciudadRef.current && cityRef.current) {
+            const point = map.queryRenderedFeatures(event.point, {
+              layers: POINT_LAYERS.filter((l) => map!.getLayer(l)),
+            })[0];
+            if (!point) {
+              void cityRef.current.pick(event.point.x, event.point.y).then((id) => {
+                callbacks.current.onSeleccion(
+                  id
+                    ? { tabla: 'edificio', id, propiedades: { ...porIdRef.current.get(id), id } }
+                    : pickAt(map!, event.point),
+                );
+              });
+              return;
+            }
+          }
+          callbacks.current.onSeleccion(pickAt(map, event.point));
         });
         map.on('mousemove', (event) => {
           if (!map) return;
@@ -173,8 +234,16 @@ export function Mapa({
       callbacks.current.onMapa(null);
       map?.remove();
       mapRef.current = null;
+      cityRef.current = null;
     };
   }, []);
+
+  // El paquete de la ciudad 3D se pide al elegir ese modo y se arma en un worker.
+  useEffect(() => {
+    if (!ready || !conCiudad || !cityRef.current) return;
+    callbacks.current.onCiudad?.({ estado: 'cargando' });
+    cityRef.current.load(dataUrl(`${origen.ciudad.id}/ciudad3d.json`, origen.datos));
+  }, [ready, conCiudad, origen]);
 
   // Resalta el elemento seleccionado (edificio, huella complementaria o vía).
   useEffect(() => {
@@ -184,6 +253,7 @@ export function Mapa({
     map.setFilter('bm-seleccion-area', ['==', ['get', 'id'], id('edificio')]);
     map.setFilter('bm-seleccion-via', ['==', ['get', 'id'], id('red_vial')]);
     map.setFilter('bm-complemento-seleccion', ['==', ['get', 'id'], id('edificio_complemento')]);
+    cityRef.current?.setSelected(id('edificio'));
   }, [seleccion, ready]);
 
   // Cambia solo la pintura: conserva fuentes, cámara, filtros y selección.
@@ -200,6 +270,13 @@ export function Mapa({
           value,
         );
     }
+    const palette = MAP_THEMES[tema].palette;
+    cityRef.current?.setTheme({
+      night: palette.noche,
+      saturation: palette.saturacion,
+      selection: palette.seleccion,
+      fog: palette.horizonte,
+    });
     map.setLight(next.light!);
     map.setSky(next.sky!);
     if (container.current) container.current.dataset.theme = tema;
@@ -251,6 +328,8 @@ export function Mapa({
     (map.getSource('bm-agregados') as GeoJSONSource).setData(
       correcciones?.edificiosAgregados ?? empty,
     );
+    // La ciudad 3D se vuelve a armar sin los edificios marcados como inexistentes.
+    cityRef.current?.setHidden(buildings);
   }, [correcciones, ready]);
 
   // Las alturas simuladas se pueden ocultar sin ocultar las estimadas por satélite.
@@ -261,6 +340,7 @@ export function Mapa({
     const visible = (
       mostrarSimuladas ? ['all', hidden] : ['all', hidden, ['!=', ['get', 'tipo'], 'simulada']]
     ) as FilterSpecification;
+    cityRef.current?.setHideSimulated(!mostrarSimuladas);
     map.setFilter('bm-alturas-3d', visible);
     map.setFilter('bm-alturas-sombra', visible);
     map.setFilter('bm-alturas-seleccion', [
@@ -274,15 +354,20 @@ export function Mapa({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    for (const layer of [
-      'bm-edificios-3d',
-      'bm-alturas-3d',
-      'bm-alturas-sombra',
-      'bm-alturas-seleccion',
-      'bm-complemento-3d',
-      'bm-agregados-3d',
-    ])
+    for (const layer of CLASSIC_3D)
+      map.setLayoutProperty(layer, 'visibility', mode3d && !ciudad3d ? 'visible' : 'none');
+    for (const layer of ['bm-complemento-3d', 'bm-agregados-3d'])
       map.setLayoutProperty(layer, 'visibility', mode3d ? 'visible' : 'none');
+    if (map.getLayer(CITY_LAYER))
+      map.setLayoutProperty(CITY_LAYER, 'visibility', ciudad3d ? 'visible' : 'none');
+    // En la ciudad 3D los árboles y la sombra corta de las huellas los dibuja la ciudad.
+    for (const layer of ['bm-arboles', 'bm-arboles-sombra', 'bm-edificios-sombra'])
+      if (map.getLayer(layer))
+        map.setLayoutProperty(layer, 'visibility', ciudad3d ? 'none' : 'visible');
+    if (ciudad3d) cityRef.current?.rise();
+    if (map.getLayer('bm-lugares')) map.setLayerZoomRange('bm-lugares', ciudad3d ? 18.4 : 15.5, 24);
+    if (map.getLayer('bm-lugares-texto'))
+      map.setLayerZoomRange('bm-lugares-texto', ciudad3d ? 18.4 : 16, 24);
     if (mode3d) {
       map.dragRotate.enable();
       map.touchZoomRotate.enableRotation();
@@ -308,7 +393,7 @@ export function Mapa({
       map.setMinPitch(minPitch);
       map.setMaxPitch(maxPitch);
     });
-  }, [vista, mode3d, ready]);
+  }, [vista, mode3d, ciudad3d, ready]);
 
   return (
     <div
@@ -318,6 +403,7 @@ export function Mapa({
       data-ready="false"
       data-theme={tema}
       data-modo={vista}
+      data-modo3d={conCiudad ? 'ciudad' : 'clasico'}
     />
   );
 }
